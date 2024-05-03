@@ -24,22 +24,11 @@ dataset_path = 'C:\\Users\\codya\\Downloads\\testDataML\\dog_breeds'
 transform = transforms.Compose([
     transforms.Resize((32, 32)),
     transforms.ToTensor(),
-    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))  # Adjust normalization values
 ])
-
-# Define a function to display images
-def imshow(img):
-    img = img / 2 + 0.5     # unnormalize
-    npimg = img.numpy()
-    plt.imshow(np.transpose(npimg, (1, 2, 0)))
-    plt.show()
 
 # Load the dataset from folders
 dataset = ImageFolder(root=dataset_path, transform=transform)
-
-# Create a mapping from breed names to class indices based on the dataset's classes
-classes = dataset.classes
-breed_to_class = {breed: idx for idx, breed in enumerate(classes)}
 
 # Split the dataset into train and test sets
 train_size = int(0.8 * len(dataset))
@@ -53,7 +42,7 @@ testloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
 # Define your neural network architecture here
 class Net(nn.Module):
-    def __init__(self, num_classes=len(classes)):
+    def __init__(self, num_classes):
         super(Net, self).__init__()
         self.conv1 = nn.Conv2d(3, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
@@ -71,7 +60,7 @@ class Net(nn.Module):
         x = self.fc3(x)
         return x
 
-net = Net()
+net = Net(len(dataset.classes))
 
 # Load previous model weights if available
 model_path = 'leotrain.pth'
@@ -83,6 +72,11 @@ except FileNotFoundError:
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+
+# Use DataParallel if multiple GPUs are available
+if torch.cuda.device_count() > 1:
+    print("Using", torch.cuda.device_count(), "GPUs for training.")
+    net = nn.DataParallel(net)
 
 start_time = time.time()
 
@@ -119,18 +113,6 @@ with torch.no_grad():
         correct += (predicted == labels).sum().item()
 
 print(f'Accuracy of the network on the {len(testloader.dataset)} test images: {100 * correct / total} %')
-
-# Adjust the output layer dimension and test some images (example from the first batch)
-dataiter = iter(testloader)
-images, labels = next(dataiter)
-outputs = net(images)
-_, predicted = torch.max(outputs, 1)
-predicted_breeds = [classes[idx] for idx in predicted]  # Corrected generation of predicted_breeds
-
-# Display images and predictions
-imshow(torchvision.utils.make_grid(images))
-print('GroundTruth:', ' '.join(f'{classes[labels[j]]}' for j in range(len(labels))))
-print('Predicted:', ' '.join(f'{predicted_breeds[j]}' for j in range(len(labels))))
 
 # Save the model weights for future use
 torch.save(net.state_dict(), 'leotrain.pth')
