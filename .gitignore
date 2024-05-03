@@ -1,2 +1,3 @@
 # Ignore leotrain.pth file
 leotrain.pth
+cifar_net.pth
