@@ -13,34 +13,34 @@ import os
 
 max_duration = 360000
 
-# Function to extract breed name from label
+#Function to extract breed name from label
 def extract_breed_name(label):
     return label.split('-')[-1]
 
-# Path to the dataset
+#Path to the dataset
 dataset_path = 'C:\\Users\\codya\\Downloads\\testDataML\\dog_breeds'
 
-# Define the transformation to apply to the images
+#Define the transformation to apply to the images
 transform = transforms.Compose([
     transforms.Resize((32, 32)),
     transforms.ToTensor(),
-    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))  # Adjust normalization values
+    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))  #Adjust normalization values
 ])
 
-# Load the dataset from folders
+#Load the dataset from folders
 dataset = ImageFolder(root=dataset_path, transform=transform)
 
-# Split the dataset into train and test sets
+#split the dataset into train and test sets
 train_size = int(0.8 * len(dataset))
 test_size = len(dataset) - train_size
 train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
 
-# Create data loaders
+#Create data loaders
 batch_size = 8
 trainloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 testloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
-# Define your neural network architecture here
+#Define neural network architecture
 class Net(nn.Module):
     def __init__(self, num_classes):
         super(Net, self).__init__()
@@ -62,7 +62,7 @@ class Net(nn.Module):
 
 net = Net(len(dataset.classes))
 
-# Load previous model weights if available
+#Load previous model weights if available
 model_path = 'leotrain.pth'
 try:
     net.load_state_dict(torch.load(model_path))
@@ -73,14 +73,14 @@ except FileNotFoundError:
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
-# Use DataParallel if multiple GPUs are available
+#Use DataParallel if multiple GPUs are available
 if torch.cuda.device_count() > 1:
     print("Using", torch.cuda.device_count(), "GPUs for training.")
     net = nn.DataParallel(net)
 
 start_time = time.time()
 
-# Train the neural network
+#Train the neural network
 for epoch in range(80):
     running_loss = 0.0
     for i, data in enumerate(trainloader, 0):
@@ -102,7 +102,7 @@ for epoch in range(80):
 
 print('Finished Training')
 
-# Testing the network on the test data
+#Testing the network on the test data
 correct = 0
 total = 0
 with torch.no_grad():
@@ -114,5 +114,5 @@ with torch.no_grad():
 
 print(f'Accuracy of the network on the {len(testloader.dataset)} test images: {100 * correct / total} %')
 
-# Save the model weights for future use
+#Save the model weights for future use
 torch.save(net.state_dict(), 'leotrain.pth')
